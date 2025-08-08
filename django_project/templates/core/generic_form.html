@@ -6,6 +6,14 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />     
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    th, td {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
     <div class="card">
         <div class="card-header">
@@ -23,12 +31,7 @@
                     <strong>{{ formset.prefix }}</strong>
                     {{ formset.management_form }}
                     {{ formset.media }}
-                    {% if formset.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ formset.errors|join:" " }}
-                    </div>
-                    {% endif %}
-                <table class="table" style="table-layout: fixed;">
+                <table class="table" style="width: auto">
                     {% for form in formset %}
                         {% if forloop.first %}
                         <tr>
@@ -55,6 +58,39 @@
                         {% endfor %}
                     {% endfor %}
                 </table>
+                {% elif formsets %}
+                    {% for formset in formsets %}
+                        <strong>{{ formset.prefix }}</strong>
+                        {{ formset.management_form }}
+                        {{ formset.media }}
+                        <table class="table" style="width: auto">
+                        {% for form in formset %}
+                            {% if forloop.first %}
+                            <tr>
+                                {% for field in form.visible_fields %}
+                                    <td>{{ field.label }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endif %}
+                            
+                            <tr class="formset_row">
+                            {% for field in form.visible_fields %}
+                                <td>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ field.errors|join:" " }}
+                                    </div>
+                                {% endif %}
+                                </td>
+                            {% endfor %}
+                            </tr>
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                        {% endfor %}
+                        </table>
+                    {% endfor %}
                 {% endif %}
                 <br>
                 <button type="submit" class="btn btn-primary">Submit</button>

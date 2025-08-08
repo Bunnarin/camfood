@@ -10,6 +10,20 @@
 <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    #data-table {
+        white-space: nowrap;
+        width: auto;
+    }
+
+    #data-table th,
+    #data-table td {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
     <div class="mb-3">
         {% for action, url in actions.items %}
@@ -19,7 +33,7 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-striped table-hover table-bordered" id="data-table">
+        <table class="table table-striped" id="data-table">
             <thead>
                 <tr>
                 {% if object_actions or obj.get_absolute_url %}
@@ -49,7 +63,7 @@
                         {% if field_value.get_absolute_url %}
                             <a href="{{ field_value.get_absolute_url }}">{{ field_value }}</a>
                         {% else %}
-                            {{ field_value|default:"" }}
+                            {{ field_value }}
                         {% endif %}
                     {% endwith %}
                     </td>

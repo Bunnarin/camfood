@@ -19,9 +19,16 @@ INSTALLED_APPS = [
     'allauth.account',
     'cachalot',
     'auditlog',
+    'extra_views',
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'django_crontab',
     # mine
     'apps.core',
     'apps.user',
+    'apps.product',
+    'apps.material',
+    'apps.process',
 ]
 
 MIDDLEWARE = [
@@ -34,6 +41,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 3rd party
     "allauth.account.middleware.AccountMiddleware",
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 ROOT_URLCONF = 'django_project.urls'
@@ -135,6 +143,23 @@ AUDITLOG_INCLUDE_ALL_MODELS = True
 AUDITLOG_EXCLUDE_TRACKING_MODELS = (
     "sessions",
 )
+AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
+    "created_on",
+    "created_by",
+    "paid_on",
+    "fulfilled_on",
+    "comment",
+    "content",
+    "discount",
+    "final_price",
+    "stock",
+    "pending_stock",
+)
 
+# cron jobs
+CRON_JOBS = [
+    ('0 0 12 1 1/1 ? *', 'apps.core.cron.delete_expired_logs'),
+    ('0 0 12 1 1/1 ? *', 'django.core.management.call_command', ['auditlogflush', '--yes'])
+]
 
 
