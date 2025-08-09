@@ -1,11 +1,12 @@
 from django.forms import formset_factory
-from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from .models import Order, Product
+from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
+from .models import Order, Product, Adjustment
 from .forms import OrderForm, OrderInlineForm
 
 class OrderListView(BaseListView):
     model = Order
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'buyer', 'content', 'comment']
+    table_fields = ['created_by', 'created_on', 'manufactured_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'buyer', 'comment']
+    pretty_json_field = 'content'
     object_actions = [
         ('edit', 'product:change_order', None),
         ('delete', 'product:delete_order', None),
@@ -43,13 +44,14 @@ class OrderDeleteView(BaseDeleteView):
 
 class ProductListView(BaseListView):
     model = Product
-    table_fields = ['name', 'stock', 'pending_stock', 'price', 'unit']
+    table_fields = ['name', 'code', 'stock', 'pending_stock', 'price', 'unit']
     object_actions = [
         ('edit', 'product:change_product', None),
         ('delete', 'product:delete_product', None),
     ]
     actions = [
         ('create', 'product:add_product', None),
+        ('import', 'product:import_product', 'product.import_product'),
     ]
 
 class ProductCreateView(BaseCreateView):
@@ -58,7 +60,28 @@ class ProductCreateView(BaseCreateView):
 
 class ProductUpdateView(BaseUpdateView):
     model = Product
-    fields = '__all__'
+    fields = ['code', 'price', 'unit']
 
 class ProductDeleteView(BaseDeleteView):
     model = Product
+
+class ProductImportView(BaseImportView):
+    model = Product
+
+class AdjustmentListView(BaseListView):
+    model = Adjustment
+    table_fields = ['created_by', 'created_on', 'quantity', 'comment', 'product']
+    object_actions = [
+        ('delete', 'product:delete_adjustment', None),
+    ]
+    actions = [
+        ('create', 'product:add_adjustment', None),
+    ]
+
+
+class AdjustmentCreateView(BaseCreateView):
+    model = Adjustment
+    fields = '__all__'
+
+class AdjustmentDeleteView(BaseDeleteView):
+    model = Adjustment

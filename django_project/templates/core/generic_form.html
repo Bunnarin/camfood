@@ -58,39 +58,6 @@
                         {% endfor %}
                     {% endfor %}
                 </table>
-                {% elif formsets %}
-                    {% for formset in formsets %}
-                        <strong>{{ formset.prefix }}</strong>
-                        {{ formset.management_form }}
-                        {{ formset.media }}
-                        <table class="table" style="width: auto">
-                        {% for form in formset %}
-                            {% if forloop.first %}
-                            <tr>
-                                {% for field in form.visible_fields %}
-                                    <td>{{ field.label }}</td>
-                                {% endfor %}
-                            </tr>
-                            {% endif %}
-                            
-                            <tr class="formset_row">
-                            {% for field in form.visible_fields %}
-                                <td>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ field.errors|join:" " }}
-                                    </div>
-                                {% endif %}
-                                </td>
-                            {% endfor %}
-                            </tr>
-                            {% for hidden in form.hidden_fields %}
-                                {{ hidden }}
-                            {% endfor %}
-                        {% endfor %}
-                        </table>
-                    {% endfor %}
                 {% endif %}
                 <br>
                 <button type="submit" class="btn btn-primary">Submit</button>

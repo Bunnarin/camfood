@@ -35,6 +35,9 @@
                 {% for field in table_fields %}
                     <th>{{ field }}</th>
                 {% endfor %}
+                {% if pretty_json_field %}
+                    <th>{{ pretty_json_field }}</th>
+                {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -61,6 +64,11 @@
                     {% endwith %}
                     </td>
                 {% endfor %}
+                {% if pretty_json_field %}
+                    <td>
+                        {{ obj|get_attr_from_object:pretty_json_field|pretty_json }}
+                    </td>
+                {% endif %}
                 </tr>
             {% endfor %}
             </tbody>

@@ -14,4 +14,8 @@ urlpatterns = [
     path('create/', views.MaterialCreateView.as_view(), name='add_material'),
     path('<int:pk>/update/', views.MaterialUpdateView.as_view(), name='change_material'),
     path('<int:pk>/delete/', views.MaterialDeleteView.as_view(), name='delete_material'),
+    # adjustment
+    path('adjustment/', views.AdjustmentListView.as_view(), name='view_adjustment'),
+    path('adjustment/create/', views.AdjustmentCreateView.as_view(), name='add_adjustment'),
+    path('adjustment/<int:pk>/delete/', views.AdjustmentDeleteView.as_view(), name='delete_adjustment'),
 ]

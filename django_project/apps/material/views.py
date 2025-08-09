@@ -1,6 +1,6 @@
 from django.forms import formset_factory
 from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView
-from .models import Purchase, Material
+from .models import Purchase, Material, Adjustment
 from .forms import PurchaseForm, PurchaseInlineForm
 
 class PurchaseListView(BaseListView):
@@ -58,7 +58,25 @@ class MaterialCreateView(BaseCreateView):
 
 class MaterialUpdateView(BaseUpdateView):
     model = Material
-    fields = '__all__'
+    fields = ['code', 'price', 'unit']
 
 class MaterialDeleteView(BaseDeleteView):
     model = Material
+
+class AdjustmentListView(BaseListView):
+    model = Adjustment
+    table_fields = ['created_by', 'created_on', 'quantity', 'comment', 'product']
+    object_actions = [
+        ('delete', 'material:delete_adjustment', None),
+    ]
+    actions = [
+        ('create', 'material:add_adjustment', None),
+    ]
+
+
+class AdjustmentCreateView(BaseCreateView):
+    model = Adjustment
+    fields = '__all__'
+
+class AdjustmentDeleteView(BaseDeleteView):
+    model = Adjustment

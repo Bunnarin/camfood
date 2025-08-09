@@ -37,7 +37,8 @@ class OrderInlineForm(forms.Form):
             raise ValidationError('product', 'must have both')
 
         # check if in stock
-        if data['product'].stock < data['quantity']:
-            self.add_error('quantity', 'not enough stock')
+        current_stock = data['product'].stock
+        if current_stock < data['quantity']:
+            self.add_error('quantity', f'not enough stock (នៅសល់ {current_stock})')
 
         return data

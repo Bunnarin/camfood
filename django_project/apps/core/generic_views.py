@@ -1,6 +1,11 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django import forms
+from django.forms import formset_factory
+from django.shortcuts import render
+from django.forms.models import modelform_factory
+from django.shortcuts import redirect
 
 class BaseListView(PermissionRequiredMixin, ListView):
     """
@@ -10,6 +15,7 @@ class BaseListView(PermissionRequiredMixin, ListView):
     actions = []
     template_name = 'core/generic_list.html'
     table_fields = []
+    pretty_json_field = None
 
     def get_permission_required(self):
         """
@@ -45,6 +51,8 @@ class BaseListView(PermissionRequiredMixin, ListView):
                 context["actions"][action] = url
 
         context['table_fields'] = self.table_fields
+        if self.pretty_json_field:
+            context['pretty_json_field'] = self.pretty_json_field
         return context
 
     def get_queryset(self):
@@ -74,6 +82,11 @@ class BaseListView(PermissionRequiredMixin, ListView):
             queryset = queryset.select_related(*related_fields)
         
         return queryset
+
+class BaseSelectView(ListView):
+    template_name = 'core/generic_select.html'
+    model = None
+    success_url = None
 
 class BaseWriteView(PermissionRequiredMixin):
     pk_url_kwarg = 'pk'
@@ -110,3 +123,78 @@ class BaseDeleteView(BaseWriteView, DeleteView):
         self.model_name = self.model._meta.model_name
         return [f'{self.app_label}.delete_{self.model_name}']
 
+class BaseImportView(BaseCreateView):
+    """
+    Mixin for views that require permission to import an object.
+    first, it will give a model form that asks the user to fill out the default value of each field.
+    they can also paste an entire row of values where x is the row number
+    then once they submit, we give them another form that autogenerate x amount of form (in row format)
+    those rows of form comes with prefilled default that they input and they can modify it
+    finally, they can submit the form and it will bulk create all the objects
+    """
+    fields = '__all__'
+    def _get_default_form(self, request_post=None):
+        form_class = self.form_class or modelform_factory(self.model, fields=self.fields)
+        form = form_class(request_post or None)
+        for field in form.fields:
+            form.fields[field].required = False
+            try: 
+                field_instance = self.model._meta.get_field(field)
+                is_relation = field_instance.is_relation
+            except: 
+                is_relation = False
+            if not is_relation and not isinstance(form.fields[field], forms.BooleanField):
+                # bypass the 255 limit of charfield
+                form.fields[field] = forms.CharField(widget=forms.Textarea())
+        return form
+    
+    def get(self, request, *args, **kwargs):
+        default_form = self._get_default_form()
+        return render(request, self.template_name, {'form': default_form, 'title': 'set the default values'})
+    
+    def post(self, request, *args, **kwargs):
+        FormSet_Class = formset_factory(
+            self.form_class or modelform_factory(self.model, fields=self.fields),
+            extra=0, can_delete=True
+        )
+        if 'form-TOTAL_FORMS' not in request.POST:
+            form = self._get_default_form(request.POST)
+            if form.is_valid():
+                # calculating the num form
+                data = form.cleaned_data
+                max_row_num = 0
+                for field in form.fields:
+                    try: data[field] = data[field].split('\n')
+                    except: continue
+                    max_row_num = max(max_row_num, len(data[field]))
+                
+                # now populating the inital 
+                initials = []         
+                for i in range(max_row_num):
+                    initials.append({})
+                    for field in form.fields:
+                        # if cleaned_data is an array, use the indexed. else, just use its default value
+                        if isinstance(data[field], list) and len(data[field]) > 1:
+                            try: initials[i][field] = data[field][i]
+                            except IndexError: continue    
+                        elif isinstance(data[field], list) and len(data[field]) == 1:
+                            initials[i][field] = data[field][0]
+                        else:
+                            initials[i][field] = data[field]
+
+                formset = FormSet_Class(initial=initials)
+                return render(request, self.template_name, {'formset': formset})
+            return render(request, self.template_name, {'form': form})
+        
+        elif 'form-TOTAL_FORMS' in request.POST:
+            formset = FormSet_Class(request.POST)
+            instances = []
+            if formset.is_valid():
+                for form in formset:
+                    instance = form.save(commit=False)
+                    instance.clean()
+                    instances.append(instance)
+                self.model.objects.bulk_create(instances)   
+            else:
+                return render(request, self.template_name, {'formset': formset})
+        return redirect(f'{self.app_label}:view_{self.model_name}')

@@ -3,7 +3,7 @@ from apps.core.models import Money, Transaction
 
 class MoneyView(BaseListView):
     model = Money
-    template_name = 'core/generic_singleton.html'
+    template_name = 'core/generic_detail.html'
 
     def get_queryset(self):
         return Money.objects.none()
