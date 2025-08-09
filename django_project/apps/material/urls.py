@@ -11,6 +11,7 @@ urlpatterns = [
     path('purchase/<int:pk>/delete/', views.PurchaseDeleteView.as_view(), name='delete_purchase'),
     # material
     path('', views.MaterialListView.as_view(), name='view_material'),
+    path('import/', views.MaterialImportView.as_view(), name='import_material'),
     path('create/', views.MaterialCreateView.as_view(), name='add_material'),
     path('<int:pk>/update/', views.MaterialUpdateView.as_view(), name='change_material'),
     path('<int:pk>/delete/', views.MaterialDeleteView.as_view(), name='delete_material'),

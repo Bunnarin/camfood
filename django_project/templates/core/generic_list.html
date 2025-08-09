@@ -12,20 +12,33 @@
 
 {% block extra_css %}
 <style>
+    .input {
+        field-sizing: content;
+    }
+    .table-container {
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+    th {
+        border: 1px solid #dee2e6;
+    }
     th, td {
-        max-width: 0;
-        overflow: hidden;
+        max-width: fit-content(50%);
+        white-space: wrap;
         text-overflow: ellipsis;
+        text-align: left;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-        {% for action, url in actions.items %}
-            <a href="{% url url %}" class="btn btn-primary">{{ action }}</a>
-        {% endfor %}
-        <button class="btn" id="export-btn" onclick="exportTable()">Export</button>
-
+    {% for action, url in actions.items %}
+        <a href="{% url url %}" class="btn btn-primary">{{ action }}</a>
+    {% endfor %}
+    <button class="btn" id="export-btn" onclick="exportTable()">Export</button>
+    
+    <div class="table-container">
         <table class="table table-striped" id="data-table">
             <thead>
                 <tr>
@@ -73,6 +86,7 @@
             {% endfor %}
             </tbody>
         </table>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -87,10 +101,8 @@
                         var column = this;
                         var header = $(column.header()); // Get the header element
                         // Create input element
-                        var title = $('<p hidden>' + header.text().trim() + '</p>')
-                            .appendTo(header.empty());
-                        var input = $('<input placeholder="' + header.text().trim() + '" />')
-                            .appendTo(header) // Empty existing header text and append input
+                        var input = $('<input placeholder="' + header.text().trim() + '"/>')
+                            .appendTo(header.empty()) // Empty existing header text and append input
                             .on('keyup change clear', function() {
                                 if (column.search() !== this.value) {
                                     column.search(this.value).draw();

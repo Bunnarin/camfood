@@ -10,7 +10,10 @@
 <style>
     th, td {
         white-space: nowrap;
+        max-width:fit-content;
     }
+
+    
 </style>
 {% endblock %}
 
@@ -89,7 +92,7 @@
 </script>
 
 <!-- for inline formset -->
-<script src="{% static 'js/formset.js' %}"></script>
+<script src="{% static 'js/jquery.formset.js' %}"></script>
 <script type="text/javascript">
     $('.formset_row').formset({
         prefix: '{{ formset.prefix }}',

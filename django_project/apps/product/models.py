@@ -34,16 +34,16 @@ class Adjustment(models.Model):
     created_on = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False, related_name='product_adjustments')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.IntegerField(help_text="ដកចេញ")
+    quantity = models.IntegerField(help_text="ថែម, ដើម្បីដកដាក់សញ្ញាដកពីមុខ")
     comment = models.CharField(max_length=255, null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.product.add_stock(-self.quantity)
+            self.product.add_stock(self.quantity)
         super().save(*args, **kwargs)
     
     def delete(self, *args, **kwargs):
-        self.product.add_stock(self.quantity)
+        self.product.add_stock(-self.quantity)
         super().delete(*args, **kwargs)
 
 class Buyer(models.Model):
@@ -53,14 +53,12 @@ class Buyer(models.Model):
         return self.name
 
 class Order(models.Model):
-    BOOL_CHOICES = [(True, 'Yes'),(False, 'No')]
-
-    manufactured_on = models.DateField(null=True, blank=True)
+    manufactured_on = models.TextField(null=True, blank=True)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True, editable=False)
-    paid = models.BooleanField(default=False, choices=BOOL_CHOICES)
+    paid = models.BooleanField(default=False)
     paid_on = models.DateField(null=True, blank=True, editable=False)
-    fulfilled = models.BooleanField(default=False, choices=BOOL_CHOICES)
+    fulfilled = models.BooleanField(default=False)
     fulfilled_on = models.DateField(null=True, blank=True, editable=False)
 
     content = models.JSONField(editable=False)

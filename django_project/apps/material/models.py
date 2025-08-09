@@ -3,8 +3,8 @@ from django.utils import timezone
 from apps.core.models import add_debt, fulfill_debt
 
 class Material(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    code = models.CharField(max_length=4, unique=True)
+    name = models.CharField(unique=True)
+    code = models.CharField(unique=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="in USD")
     unit = models.CharField(max_length=255)
     stock = models.IntegerField(default=0, editable=False)
@@ -34,16 +34,16 @@ class Adjustment(models.Model):
     created_on = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False, related_name='material_adjustments')
     material = models.ForeignKey(Material, on_delete=models.PROTECT)
-    quantity = models.IntegerField(help_text="ដកចេញ")
+    quantity = models.IntegerField(help_text="ថែម, ដើម្បីដកដាក់សញ្ញាដកពីមុខ")
     comment = models.CharField(max_length=255, null=True, blank=True)
     
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.material.add_stock(-self.quantity)
+            self.material.add_stock(self.quantity)
         super().save(*args, **kwargs)
     
     def delete(self, *args, **kwargs):
-        self.material.add_stock(self.quantity)
+        self.material.add_stock(-self.quantity)
         super().delete(*args, **kwargs)
 
 class Supplier(models.Model):
@@ -53,12 +53,11 @@ class Supplier(models.Model):
         return self.name
 
 class Purchase(models.Model):
-    BOOL_CHOICES = [(True, 'Yes'),(False, 'No')]
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True)
-    paid = models.BooleanField(default=False, choices=BOOL_CHOICES)
+    paid = models.BooleanField(default=False)
     paid_on = models.DateField(null=True, blank=True, editable=False)
-    fulfilled = models.BooleanField(default=False, choices=BOOL_CHOICES)
+    fulfilled = models.BooleanField(default=False)
     fulfilled_on = models.DateField(null=True, blank=True, editable=False)
 
     content = models.JSONField(editable=False)
