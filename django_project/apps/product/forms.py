@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Order, Product, Buyer
 
 class OrderForm(forms.ModelForm):
@@ -29,7 +30,14 @@ class OrderInlineForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+
+        no_both = not data.get('product') and not data.get('quantity')
+        yes_both = data.get('product') and data.get('quantity')
+        if not no_both and not yes_both:
+            raise ValidationError('product', 'must have both')
+
         # check if in stock
         if data['product'].stock < data['quantity']:
             self.add_error('quantity', 'not enough stock')
+
         return data

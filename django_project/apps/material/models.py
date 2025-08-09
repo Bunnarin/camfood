@@ -35,6 +35,8 @@ class Purchase(models.Model):
     content = models.JSONField(editable=False)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
     comment = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(default=0, max_digits=10, decimal_places=2,
+        help_text="បើមិនដាក់ វានឹងគណនាឲ្យ")
 
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True)
@@ -43,22 +45,20 @@ class Purchase(models.Model):
     fulfilled = models.BooleanField(default=False)
     fulfilled_on = models.DateField(null=True, blank=True, editable=False)
 
-    final_price = models.DecimalField(default=0, max_digits=10, decimal_places=2, help_text="$", editable=False)
-    discount = models.DecimalField(default=0, max_digits=10, decimal_places=2, help_text="$")
-
-    def save(self, *args, **kwargs):
-        if not self.pk: # make changes only during creation
-            # deduct the stock and calculate the price
+    def save(self, *args, **kwargs):    
+        if not self.pk:
+            calculate_price = not self.price
             for material_name, quantity in self.content.items():
                 material = Material.objects.get(name=material_name)
                 material.add_pending_stock(quantity)
-                self.final_price += material.price * quantity
-            self.final_price -= self.discount
-            add_debt(self.final_price)
+                if calculate_price:
+                    self.price += material.price * quantity
+            add_debt(self.price)
+
             
         if self.paid and not self.paid_on:
             self.paid_on = timezone.now().date()
-            fulfill_debt(self.final_price)
+            fulfill_debt(self.price)
         elif not self.paid and self.paid_on:
             raise ValueError("cannot change from paid to unpaid")
 
@@ -86,7 +86,7 @@ class Purchase(models.Model):
                 material.add_pending_stock(-quantity)
 
         if not self.paid: # rm the debt
-            add_debt(-self.final_price)
+            add_debt(-self.price)
 
         super().delete(*args, **kwargs)
     

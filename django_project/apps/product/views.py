@@ -5,7 +5,7 @@ from .forms import OrderForm, OrderInlineForm
 
 class OrderListView(BaseListView):
     model = Order
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'discount', 'final_price', 'buyer', 'content', 'comment']
+    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'buyer', 'content', 'comment']
     object_actions = [
         ('edit', 'product:change_order', None),
         ('delete', 'product:delete_order', None),
@@ -32,7 +32,6 @@ class OrderCreateView(BaseCreateView):
             try: content[item['product'].name] = item['quantity']
             except: break
         form.instance.content = content
-        form.instance.created_by = self.request.user
         return super().form_valid(form)
 
 class OrderUpdateView(BaseUpdateView):

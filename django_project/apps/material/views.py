@@ -5,7 +5,7 @@ from .forms import PurchaseForm, PurchaseInlineForm
 
 class PurchaseListView(BaseListView):
     model = Purchase
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'discount', 'final_price', 'supplier', 'content', 'comment']
+    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'supplier', 'content', 'comment']
     object_actions = [
         ('edit', 'material:change_purchase', None),
         ('delete', 'material:delete_purchase', None),
@@ -32,7 +32,6 @@ class PurchaseCreateView(BaseCreateView):
             try: content[item['material'].name] = item['quantity']
             except: break
         form.instance.content = content
-        form.instance.created_by = self.request.user
         return super().form_valid(form)
 
 class PurchaseUpdateView(BaseUpdateView):

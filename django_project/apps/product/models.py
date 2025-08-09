@@ -35,6 +35,8 @@ class Order(models.Model):
     content = models.JSONField(editable=False)
     buyer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     comment = models.CharField(max_length=255, null=True, blank=True)
+    price = models.DecimalField(default=0, max_digits=10, decimal_places=2,
+        help_text="បើមិនដាក់ វានឹងគណនាឲ្យ")
 
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True, editable=False)
@@ -43,22 +45,19 @@ class Order(models.Model):
     fulfilled = models.BooleanField(default=False)
     fulfilled_on = models.DateField(null=True, blank=True, editable=False)
 
-    final_price = models.DecimalField(default=0, max_digits=10, decimal_places=2, help_text="$", editable=False)
-    discount = models.DecimalField(default=0, max_digits=10, decimal_places=2, help_text="$")
-
-    def save(self, *args, **kwargs):
-        if not self.pk: # make changes only during creation
-            # deduct the stock and calculate the price
+    def save(self, *args, **kwargs):            
+        if not self.pk:
+            calculate_price = not self.price
             for product_name, quantity in self.content.items():
                 product = Product.objects.get(name=product_name)
                 product.add_pending_stock(quantity)
-                self.final_price += product.price * quantity
-            self.final_price -= self.discount
-            add_pending_money(self.final_price)
+                if calculate_price:
+                    self.price += product.price * quantity
+            add_pending_money(self.price)
             
         if self.paid and not self.paid_on:
             self.paid_on = timezone.now().date()
-            fulfill_money(self.final_price)
+            fulfill_money(self.price)
         elif not self.paid and self.paid_on:
             raise ValueError("cannot change from paid to unpaid")
 
@@ -86,7 +85,7 @@ class Order(models.Model):
                 product.add_pending_stock(-quantity)
 
         if not self.paid: # rm the pending money
-            add_pending_money(-self.final_price)
+            add_pending_money(-self.price)
 
         super().delete(*args, **kwargs)
     

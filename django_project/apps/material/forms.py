@@ -22,3 +22,11 @@ class PurchaseForm(forms.ModelForm):
 class PurchaseInlineForm(forms.Form):
     material = forms.ModelChoiceField(Material.objects)
     quantity = forms.IntegerField()
+
+    def clean(self):
+        data = super().clean()
+        no_both = not data.get('material') and not data.get('quantity')
+        yes_both = data.get('material') and data.get('quantity')
+        if not no_both and not yes_both:
+            self.add_error('material', 'must have both')
+        return data

@@ -9,4 +9,5 @@ urlpatterns = [
     path('product/', include('apps.product.urls')),
     path('material/', include('apps.material.urls')),
     path('process/', include('apps.process.urls')),
+    path('core/', include('apps.core.urls')),
 ]

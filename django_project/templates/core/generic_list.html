@@ -12,27 +12,20 @@
 
 {% block extra_css %}
 <style>
-    #data-table {
-        white-space: nowrap;
-        width: auto;
-    }
-
-    #data-table th,
-    #data-table td {
-        white-space: nowrap;
+    th, td {
+        max-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-    <div class="mb-3">
         {% for action, url in actions.items %}
             <a href="{% url url %}" class="btn btn-primary">{{ action }}</a>
         {% endfor %}
         <button class="btn" id="export-btn" onclick="exportTable()">Export</button>
-    </div>
 
-    <div class="table-responsive">
         <table class="table table-striped" id="data-table">
             <thead>
                 <tr>
@@ -72,7 +65,6 @@
             {% endfor %}
             </tbody>
         </table>
-    </div>
 {% endblock %}
 
 {% block extra_js %}

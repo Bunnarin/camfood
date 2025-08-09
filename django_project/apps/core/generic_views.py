@@ -93,6 +93,10 @@ class BaseCreateView(BaseWriteView, CreateView):
         self.app_label = self.model._meta.app_label
         self.model_name = self.model._meta.model_name
         return [f'{self.app_label}.add_{self.model_name}']
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
 
 class BaseUpdateView(BaseWriteView, UpdateView):
     def get_permission_required(self):

@@ -19,7 +19,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'cachalot',
     'auditlog',
-    'extra_views',
     'crispy_forms',
     'crispy_bootstrap5',
     'django_crontab',
@@ -75,6 +74,7 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': 'postgresql',
         'PORT': '5432',
+        'ATOMIC_REQUESTS': True
     }
 }
 
@@ -142,6 +142,8 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 AUDITLOG_INCLUDE_ALL_MODELS = True
 AUDITLOG_EXCLUDE_TRACKING_MODELS = (
     "sessions",
+    "money",
+    "transaction",
 )
 AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "created_on",
