@@ -12,9 +12,6 @@
 
 {% block extra_css %}
 <style>
-    .input {
-        field-sizing: content;
-    }
     .table-container {
         overflow-x: auto;
         width: 100%;
@@ -49,7 +46,7 @@
                     <th>{{ field }}</th>
                 {% endfor %}
                 {% if pretty_json_field %}
-                    <th>{{ pretty_json_field }}</th>
+                    <th style="max-width: 100%;">{{ pretty_json_field }}</th>
                 {% endif %}
                 </tr>
             </thead>
@@ -78,7 +75,7 @@
                     </td>
                 {% endfor %}
                 {% if pretty_json_field %}
-                    <td>
+                    <td style="max-width: fit-content;">
                         {{ obj|get_attr_from_object:pretty_json_field|pretty_json }}
                     </td>
                 {% endif %}
@@ -101,7 +98,7 @@
                         var column = this;
                         var header = $(column.header()); // Get the header element
                         // Create input element
-                        var input = $('<input placeholder="' + header.text().trim() + '"/>')
+                        var input = $('<input placeholder="' + header.text().trim() + '" style="field-sizing: content;"/>')
                             .appendTo(header.empty()) // Empty existing header text and append input
                             .on('keyup change clear', function() {
                                 if (column.search() !== this.value) {

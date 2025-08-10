@@ -8,6 +8,9 @@ class Money(models.Model):
     pending_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="$", default=0)
     debt = models.DecimalField(max_digits=10, decimal_places=2, help_text="$", default=0)
 
+    class Meta:
+        verbose_name_plural = 'Money'
+
 class Transaction(models.Model):
     created_on = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)

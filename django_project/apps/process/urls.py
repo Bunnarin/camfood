@@ -6,6 +6,7 @@ app_name = 'process'
 urlpatterns = [
     # formula
     path('formula/', views.FormulaListView.as_view(), name='view_formula'),
+    path('formula/<int:pk>/', views.FormulaDetailView.as_view(), name='detail_formula'),
     path('formula/create/', views.FormulaCreateView.as_view(), name='add_formula'),
     path('formula/change/<int:pk>/', views.FormulaUpdateView.as_view(), name='change_formula'),
     path('formula/delete/<int:pk>', views.FormulaDeleteView.as_view(), name='delete_formula'),

@@ -3,8 +3,8 @@ from django.utils import timezone
 from apps.core.models import add_debt, fulfill_debt
 
 class Material(models.Model):
-    name = models.CharField(unique=True)
-    code = models.CharField(unique=True)
+    name = models.CharField(max_length=255, unique=True)
+    code = models.CharField(max_length=4, unique=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="in USD")
     unit = models.CharField(max_length=255)
     stock = models.IntegerField(default=0, editable=False)

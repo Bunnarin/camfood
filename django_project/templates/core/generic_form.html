@@ -6,17 +6,6 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />     
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    th, td {
-        white-space: nowrap;
-        max-width:fit-content;
-    }
-
-    
-</style>
-{% endblock %}
-
 {% block content %}
     <div class="card">
         <div class="card-header">
@@ -74,19 +63,22 @@
 {{ block.super }}
 <!-- for select2 -->
 <script>
-    $(document).ready(function() {
-        // Initialize Select2 on all select elements
-        $('select').each(function() {
-            $(this).select2();
+    // to be called when new form get created so that they can have the select functionality as well
+    function initializeSelect2() {
+        $('select').not('.select2-hidden-accessible').select2({
+            theme: 'bootstrap-5',
+            width: '100%'
         });
+    }
+
+    $(document).ready(function() {
+        // Initialize Select2 on initial page load
+        initializeSelect2();
         
         // Handle form validation errors
         $('form').on('forminvalid', function() {
             // Reinitialize Select2 to show validation state
-            $('select').select2({
-                theme: 'bootstrap-5',
-                width: '100%'
-            });
+            initializeSelect2();
         });
     });
 </script>
@@ -98,6 +90,7 @@
         prefix: '{{ formset.prefix }}',
         addCssClass: 'btn btn-primary',  
         deleteCssClass: 'btn btn-danger',
+        added: initializeSelect2, // called the select2 init function when new form get created
     });
 </script>
 {% endblock %}

@@ -49,11 +49,11 @@ def pretty_json(value):
             
         # Convert dictionary to string in format "key: val, key: val"
         if isinstance(json_obj, dict):
-            formatted_str = ", ".join(f"{k}: {v}" for k, v in json_obj.items())
+            formatted_str = ",".join(f"{k}: {v}" for k, v in json_obj.items())
             return formatted_str
         # Handle lists/arrays
         elif isinstance(json_obj, (list, tuple)):
-            return ", ".join(str(item) for item in json_obj)
+            return ",".join(str(item) for item in json_obj)
         # Handle other JSON-serializable types
         else:
             return str(json_obj)

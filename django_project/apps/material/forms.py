@@ -25,8 +25,8 @@ class PurchaseInlineForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        no_both = not data.get('material') and not data.get('quantity')
-        yes_both = data.get('material') and data.get('quantity')
-        if not no_both and not yes_both:
-            self.add_error('material', 'must have both')
+        if not data.get('material'):
+            self.add_error('material', 'invalid')
+        if not data.get('quantity'):
+            self.add_error('quantity', 'invalid')
         return data

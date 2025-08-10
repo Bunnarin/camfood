@@ -1,11 +1,12 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django import forms
 from django.forms import formset_factory
 from django.shortcuts import render
 from django.forms.models import modelform_factory
 from django.shortcuts import redirect
+from .forms import get_default_form
 
 class BaseListView(PermissionRequiredMixin, ListView):
     """
@@ -83,10 +84,16 @@ class BaseListView(PermissionRequiredMixin, ListView):
         
         return queryset
 
-class BaseSelectView(ListView):
-    template_name = 'core/generic_select.html'
-    model = None
-    success_url = None
+class BaseDetailView(BaseListView, DetailView):
+    pk_url_kwarg = 'pk'
+    template_name = 'core/generic_detail.html'
+    fields = []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = self.model_name
+        context['object_dict'] = {field: getattr(self.object, field) for field in self.fields}
+        return context
 
 class BaseWriteView(PermissionRequiredMixin):
     pk_url_kwarg = 'pk'
@@ -132,33 +139,19 @@ class BaseImportView(BaseCreateView):
     those rows of form comes with prefilled default that they input and they can modify it
     finally, they can submit the form and it will bulk create all the objects
     """
-    fields = '__all__'
-    def _get_default_form(self, request_post=None):
-        form_class = self.form_class or modelform_factory(self.model, fields=self.fields)
-        form = form_class(request_post or None)
-        for field in form.fields:
-            form.fields[field].required = False
-            try: 
-                field_instance = self.model._meta.get_field(field)
-                is_relation = field_instance.is_relation
-            except: 
-                is_relation = False
-            if not is_relation and not isinstance(form.fields[field], forms.BooleanField):
-                # bypass the 255 limit of charfield
-                form.fields[field] = forms.CharField(widget=forms.Textarea())
-        return form
+    fields = []
     
     def get(self, request, *args, **kwargs):
-        default_form = self._get_default_form()
+        default_form = get_default_form(self.fields, self.model)()
         return render(request, self.template_name, {'form': default_form, 'title': 'set the default values'})
     
     def post(self, request, *args, **kwargs):
         FormSet_Class = formset_factory(
-            self.form_class or modelform_factory(self.model, fields=self.fields),
+            self.form_class or modelform_factory(self.model, fields='__all__'),
             extra=0, can_delete=True
         )
         if 'form-TOTAL_FORMS' not in request.POST:
-            form = self._get_default_form(request.POST)
+            form = get_default_form(self.fields, self.model)(request.POST)
             if form.is_valid():
                 # calculating the num form
                 data = form.cleaned_data

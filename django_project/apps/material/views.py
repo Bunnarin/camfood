@@ -1,5 +1,6 @@
+from types import SimpleNamespace as obj
 from django.forms import formset_factory
-from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
+from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView, BaseDetailView
 from .models import Purchase, Material, Adjustment
 from .forms import PurchaseForm, PurchaseInlineForm
 
@@ -9,10 +10,22 @@ class PurchaseListView(BaseListView):
     object_actions = [
         ('edit', 'material:change_purchase', None),
         ('delete', 'material:delete_purchase', None),
+        ('view', 'material:detail_purchase', 'material.view_purchase'),
     ]
     actions = [
         ('create', 'material:add_purchase', None),
     ]
+
+class PurchaseDetailView(BaseListView):
+    model = Purchase
+
+    def get_context_data(self, **kwargs):
+        purchase = Purchase.objects.get(pk=self.kwargs['pk'])
+        context = {
+            'object_list': [obj(name=name, quantity=quantity) for name, quantity in purchase.content.items()],
+            'table_fields': ['name', 'quantity']
+        }
+        return context
 
 class PurchaseCreateView(BaseCreateView):
     model = Purchase
@@ -20,7 +33,7 @@ class PurchaseCreateView(BaseCreateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['formset'] = formset_factory(PurchaseInlineForm, extra=4)
+        context['formset'] = formset_factory(PurchaseInlineForm)
         return context
     
     def form_valid(self, form):
