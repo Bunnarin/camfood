@@ -38,7 +38,7 @@ class BaseListView(PermissionRequiredMixin, ListView):
         for action, url, permission in self.object_actions:
             # it can be None for when this view can derive the permission on its own
             if not permission:
-                _, permission = url.split(':')
+                permission = url.replace(':', '.')
             if user.has_perm(permission):
                 context["object_actions"][action] = url
         
@@ -47,7 +47,7 @@ class BaseListView(PermissionRequiredMixin, ListView):
         for action, url, permission in self.actions:
             # it can be None for when this view can derive the permission on its own
             if not permission:
-                _, permission = url.split(':')
+                permission = url.replace(':', '.')
             if user.has_perm(permission):
                 context["actions"][action] = url
 
@@ -129,6 +129,11 @@ class BaseDeleteView(BaseWriteView, DeleteView):
         self.app_label = self.model._meta.app_label
         self.model_name = self.model._meta.model_name
         return [f'{self.app_label}.delete_{self.model_name}']
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f"Delete {self.object}?"
+        return context
 
 class BaseImportView(BaseCreateView):
     """

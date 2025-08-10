@@ -42,6 +42,7 @@ class OrderCreateView(BaseCreateView):
         if not formset.is_valid():
             return super().form_invalid(form)
         content = {}
+        print(formset.cleaned_data)
         for item in formset.cleaned_data:
             try: 
                 content[item['product'].code] = (item['quantity'], str(item['mfg'] or ""))
@@ -65,7 +66,7 @@ class ProductListView(BaseListView):
     ]
     actions = [
         ('create', 'product:add_product', None),
-        ('import', 'product:import_product', 'product.import_product'),
+        ('import', 'product:import_product', 'product.add_product'),
     ]
 
 class ProductCreateView(BaseCreateView):

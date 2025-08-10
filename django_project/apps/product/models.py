@@ -84,8 +84,8 @@ class Order(models.Model):
 
         if self.fulfilled and not self.fulfilled_on:
             self.fulfilled_on = timezone.now().date()
-            for product_name, quantity in self.content.items():
-                product = Product.objects.filter(name=product_name).first()
+            for product_code, (quantity, mfg) in self.content.items():
+                product = Product.objects.filter(code=product_code).first()
                 if not product:
                     continue
                 product.fulfill_stock(quantity)
@@ -99,8 +99,8 @@ class Order(models.Model):
         cancelling the order
         """
         if not self.fulfilled: # remove the staging diff stock
-            for product_name, quantity in self.content.items():
-                product = Product.objects.filter(name=product_name).first()
+            for product_code, (quantity, mfg) in self.content.items():
+                product = Product.objects.filter(code=product_code).first()
                 if not product:
                     continue
                 product.add_pending_stock(-quantity)
