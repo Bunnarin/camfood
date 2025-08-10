@@ -28,6 +28,7 @@ class OrderInlineForm(forms.Form):
     """
     product = forms.ModelChoiceField(Product.objects)
     quantity = forms.IntegerField()
+    price = forms.IntegerField(required=False)
     mfg = forms.DateField(required=False)
 
     def clean(self):
@@ -47,5 +48,9 @@ class OrderInlineForm(forms.Form):
         current_stock = data['product'].stock
         if current_stock < data['quantity']:
             raise ValidationError({'quantity': f'not enough stock (នៅសល់ {current_stock})'})
+        
+        # if price is not provided, calculate
+        if not data.get('price'):
+            data['price'] = data['product'].price * data['quantity']
 
         return data

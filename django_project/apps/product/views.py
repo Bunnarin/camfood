@@ -6,10 +6,10 @@ from .forms import OrderForm, OrderInlineForm
 
 class OrderListView(BaseListView):
     model = Order
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'buyer', 'comment']
+    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'price', 'buyer', 'comment']
     pretty_json_field = 'content'
     object_actions = [
-        ('view', 'product:detail_order', 'product.view_order'),
+        ('print', 'product:detail_order', 'product.view_order'),
         ('edit', 'product:change_order', None),
         ('delete', 'product:delete_order', None),
     ]
@@ -19,12 +19,20 @@ class OrderListView(BaseListView):
 
 class OrderDetailView(BaseListView):
     model = Order
+    template_name = 'product/invoice.html'
 
     def get_context_data(self, **kwargs):
         order = Order.objects.get(pk=self.kwargs['pk'])
         context = {
-            'object_list': [obj(code=code, quantity=quantity, mfg=mfg) for code, (quantity, mfg) in order.content.items()],
-            'table_fields': ['code', 'quantity', 'mfg']
+            'object_dict': {
+                'id': order.id,
+                'created_by': order.created_by,
+                'created_on': order.created_on,
+                'price': order.price,
+                'buyer': order.buyer,
+            },
+            'object_list': [obj(code=code, quantity=quantity, price="៛ "+str(price)) for code, (quantity, _, price) in order.content.items()],
+            'table_fields': ['code', 'quantity', 'price']
         }
         return context
 
@@ -42,17 +50,16 @@ class OrderCreateView(BaseCreateView):
         if not formset.is_valid():
             return super().form_invalid(form)
         content = {}
-        print(formset.cleaned_data)
         for item in formset.cleaned_data:
-            try: 
-                content[item['product'].code] = (item['quantity'], str(item['mfg'] or ""))
-            except: break
+            # convert cleaned_data into into the model json
+            content[item['product'].code] = (item['quantity'], str(item['mfg'] or ""), item['price'])
         form.instance.content = content
+        form.instance.price = sum(item['price'] * item['quantity'] for item in formset.cleaned_data)
         return super().form_valid(form)
 
 class OrderUpdateView(BaseUpdateView):
     model = Order
-    fields = ['paid', 'fulfilled']
+    fields = ['paid', 'done']
 
 class OrderDeleteView(BaseDeleteView):
     model = Order

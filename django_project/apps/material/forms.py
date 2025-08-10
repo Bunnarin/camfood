@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Material, Purchase, Supplier
 
 class PurchaseForm(forms.ModelForm):
@@ -22,11 +23,17 @@ class PurchaseForm(forms.ModelForm):
 class PurchaseInlineForm(forms.Form):
     material = forms.ModelChoiceField(Material.objects)
     quantity = forms.IntegerField()
+    price = forms.IntegerField(required=False)
 
     def clean(self):
         data = super().clean()
         if not data.get('material'):
-            self.add_error('material', 'invalid')
+            raise ValidationError({'material': 'invalid'})
         if not data.get('quantity'):
-            self.add_error('quantity', 'invalid')
+            raise ValidationError({'quantity': 'invalid'})
+        
+        # if price is not provided, calculate
+        if not data.get('price'):
+            data['price'] = data['material'].price * data['quantity']
+
         return data

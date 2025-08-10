@@ -84,17 +84,6 @@ class BaseListView(PermissionRequiredMixin, ListView):
         
         return queryset
 
-class BaseDetailView(BaseListView, DetailView):
-    pk_url_kwarg = 'pk'
-    template_name = 'core/generic_detail.html'
-    fields = []
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = self.model_name
-        context['object_dict'] = {field: getattr(self.object, field) for field in self.fields}
-        return context
-
 class BaseWriteView(PermissionRequiredMixin):
     pk_url_kwarg = 'pk'
     template_name = 'core/generic_form.html'

@@ -1,12 +1,12 @@
 from types import SimpleNamespace as obj
 from django.forms import formset_factory
-from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView, BaseDetailView
+from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
 from .models import Purchase, Material, Adjustment
 from .forms import PurchaseForm, PurchaseInlineForm
 
 class PurchaseListView(BaseListView):
     model = Purchase
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'fulfilled', 'fulfilled_on', 'price', 'supplier', 'content', 'comment']
+    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'price', 'supplier', 'content', 'comment']
     object_actions = [
         ('edit', 'material:change_purchase', None),
         ('delete', 'material:delete_purchase', None),
@@ -18,12 +18,19 @@ class PurchaseListView(BaseListView):
 
 class PurchaseDetailView(BaseListView):
     model = Purchase
-
+    template_name = 'product/invoice.html'
     def get_context_data(self, **kwargs):
         purchase = Purchase.objects.get(pk=self.kwargs['pk'])
         context = {
-            'object_list': [obj(name=name, quantity=quantity) for name, quantity in purchase.content.items()],
-            'table_fields': ['name', 'quantity']
+            'object_dict': {
+                'id': purchase.id,
+                'created_by': purchase.supplier,
+                'created_on': purchase.created_on,
+                'price': purchase.price,
+                'buyer': purchase.created_by,
+            },
+            'object_list': [obj(name=name, quantity=quantity, price="៛ "+str(price)) for name, (quantity, price) in purchase.content.items()],
+            'table_fields': ['name', 'quantity', 'price']
         }
         return context
 
@@ -40,16 +47,15 @@ class PurchaseCreateView(BaseCreateView):
         formset = formset_factory(PurchaseInlineForm)(self.request.POST)
         if not formset.is_valid():
             return super().form_invalid(form)
-        content = {}
+        content = {} 
         for item in formset.cleaned_data:
-            try: content[item['material'].name] = item['quantity']
-            except: break
+            content[item['material'].name] = (item['quantity'], item['price'])
         form.instance.content = content
         return super().form_valid(form)
 
 class PurchaseUpdateView(BaseUpdateView):
     model = Purchase
-    fields = ['paid', 'fulfilled']
+    fields = ['paid', 'done']
 
 class PurchaseDeleteView(BaseDeleteView):
     model = Purchase

@@ -1,5 +1,4 @@
 import random
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
@@ -16,7 +15,7 @@ class User(AbstractUser):
             self.set_unusable_password()
         
         # check if user exist or not and make the username unique
-        self.username = self.first_name + self.last_name
+        self.username = self.first_name.lower() + self.last_name.lower()
         if creation:
             while User.objects.filter(username=self.username).exists():
                 self.username += str(random.randint(0, 9))

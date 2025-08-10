@@ -3,7 +3,7 @@ from apps.core.models import Money, Transaction
 
 class MoneyView(BaseListView):
     model = Money
-    template_name = 'core/generic_detail.html'
+    template_name = 'core/generic_list.html'
 
     def get_queryset(self):
         return Money.objects.none()
@@ -16,6 +16,7 @@ class MoneyView(BaseListView):
             'Pending Amount': money.pending_amount,
             'Debt': money.debt,
         }
+        del context['object_list']
         context['title'] = 'Money'
         return context
 

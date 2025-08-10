@@ -132,8 +132,8 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
 LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGIN_METHODS = ["email", "username"]
 
 # crispy form
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
@@ -142,14 +142,19 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 AUDITLOG_INCLUDE_ALL_MODELS = True
 AUDITLOG_EXCLUDE_TRACKING_MODELS = (
     "sessions",
-    "money",
-    "transaction",
+    # the api models
+    "core.money",
+    "material.material",
+    "material.supplier",
+    "product.product",
+    "product.buyer",
 )
+
 AUDITLOG_EXCLUDE_TRACKING_FIELDS = (
     "created_on",
     "created_by",
     "paid_on",
-    "fulfilled_on",
+    "done_on",
     "comment",
     "content",
     "discount",

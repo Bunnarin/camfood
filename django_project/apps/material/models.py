@@ -5,14 +5,14 @@ from apps.core.models import add_debt, fulfill_debt
 class Material(models.Model):
     name = models.CharField(max_length=255, unique=True)
     code = models.CharField(max_length=4, unique=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="in USD")
+    price = models.IntegerField(help_text="៛")
     unit = models.CharField(max_length=255)
-    stock = models.IntegerField(default=0, editable=False)
+    stock = models.IntegerField(default=0)
     pending_stock = models.IntegerField(default=0, editable=False)
 
     class Meta:
-        verbose_name = 'Stock'
-        verbose_name_plural = 'Stocks'
+        verbose_name = 'ស្តុកគ្រឿង'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return f"{self.name} (${self.price}/{self.unit}) ({self.code})"
@@ -34,16 +34,21 @@ class Adjustment(models.Model):
     created_on = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False, related_name='material_adjustments')
     material = models.ForeignKey(Material, on_delete=models.PROTECT)
-    quantity = models.IntegerField(help_text="ថែម, ដើម្បីដកដាក់សញ្ញាដកពីមុខ")
+    quantity = models.IntegerField(help_text="ថែម, ដាក់ - ពីមុខដើម្បីថយ")
     comment = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'ថែមថយស្តុក'
+        verbose_name_plural = verbose_name
     
     def save(self, *args, **kwargs):
         if not self.pk:
             self.material.add_stock(self.quantity)
         super().save(*args, **kwargs)
     
-    def delete(self, *args, **kwargs):
-        self.material.add_stock(-self.quantity)
+    def delete(self, *args, revert=True, **kwargs):
+        if revert:
+            self.material.add_stock(-self.quantity)
         super().delete(*args, **kwargs)
 
 class Supplier(models.Model):
@@ -57,41 +62,41 @@ class Purchase(models.Model):
     created_on = models.DateField(auto_now_add=True)
     paid = models.BooleanField(default=False)
     paid_on = models.DateField(null=True, blank=True, editable=False)
-    fulfilled = models.BooleanField(default=False)
-    fulfilled_on = models.DateField(null=True, blank=True, editable=False)
+    done = models.BooleanField(default=False)
+    done_on = models.DateField(null=True, blank=True, editable=False)
 
     content = models.JSONField(editable=False)
     comment = models.CharField(max_length=255, null=True, blank=True)
-    price = models.DecimalField(default=0, max_digits=10, decimal_places=2,
-        help_text="បើមិនដាក់ វានឹងគណនាឲ្យ")
+    price = models.IntegerField(default=0, editable=False)
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
+
+    class Meta:
+        verbose_name = 'បុងទិញចូល'
+        verbose_name_plural = 'បុងទិញចូល'
 
     def save(self, *args, **kwargs):    
         if not self.pk:
-            calculate_price = not self.price
-            for material_name, quantity in self.content.items():
+            for material_name, (quantity, final_price) in self.content.items():
                 material = Material.objects.get(name=material_name)
                 material.add_pending_stock(quantity)
-                if calculate_price:
-                    self.price += material.price * quantity
+                self.price += final_price
             add_debt(self.price)
 
-            
         if self.paid and not self.paid_on:
             self.paid_on = timezone.now().date()
             fulfill_debt(self.price)
         elif not self.paid and self.paid_on:
             raise ValueError("cannot change from paid to unpaid")
 
-        if self.fulfilled and not self.fulfilled_on:
-            self.fulfilled_on = timezone.now().date()
-            for material_name, quantity in self.content.items():
+        if self.done and not self.done_on:
+            self.done_on = timezone.now().date()
+            for material_name, (quantity, _) in self.content.items():
                 material = Material.objects.filter(name=material_name).first()
                 if not material:
                     continue
                 material.fulfill_stock(quantity)
-        elif not self.fulfilled and self.fulfilled_on:
-            raise ValueError("cannot change from fulfilled to unfulfilled")
+        elif not self.done and self.done_on:
+            raise ValueError("cannot change from done to undone")
                 
         super().save(*args, **kwargs)
     
@@ -99,8 +104,8 @@ class Purchase(models.Model):
         """
         cancelling the purchase
         """
-        if not self.fulfilled: # remove the staging diff stock
-            for material_name, quantity in self.content.items():
+        if not self.done: # remove the staging diff stock
+            for material_name, (quantity, _) in self.content.items():
                 material = Material.objects.filter(name=material_name).first()
                 if not material:
                     continue
