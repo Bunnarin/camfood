@@ -20,4 +20,9 @@ urlpatterns = [
     path('adjustment/', views.AdjustmentListView.as_view(), name='view_adjustment'),
     path('adjustment/create/', views.AdjustmentCreateView.as_view(), name='add_adjustment'),
     path('adjustment/delete/<int:pk>/', views.AdjustmentDeleteView.as_view(), name='delete_adjustment'),
+    # supplier
+    path('supplier/', views.SupplierListView.as_view(), name='view_supplier'),
+    path('supplier/create/', views.SupplierCreateView.as_view(), name='add_supplier'),
+    path('supplier/delete/<int:pk>/', views.SupplierDeleteView.as_view(), name='delete_supplier'),
+    path('supplier/update/<int:pk>/', views.SupplierUpdateView.as_view(), name='change_supplier'),
 ]

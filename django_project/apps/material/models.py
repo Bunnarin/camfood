@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from apps.core.models import add_debt, fulfill_debt
+from django.urls import reverse
 
 class Material(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -38,7 +39,7 @@ class Adjustment(models.Model):
     comment = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        verbose_name = 'ថែមថយស្តុក'
+        verbose_name = 'ថែមថយស្តុកគ្រឿង'
         verbose_name_plural = verbose_name
     
     def save(self, *args, **kwargs):
@@ -53,11 +54,21 @@ class Adjustment(models.Model):
 
 class Supplier(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    contact = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'អ្នកផ្គត់ផ្គង់'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return self.name
 
+    def get_absolute_url(self):
+        return reverse('material:change_supplier', kwargs={'pk': self.pk})
+
 class Purchase(models.Model):
+    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
+
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True)
     paid = models.BooleanField(default=False)
@@ -68,7 +79,6 @@ class Purchase(models.Model):
     content = models.JSONField(editable=False)
     comment = models.CharField(max_length=255, null=True, blank=True)
     price = models.IntegerField(default=0, editable=False)
-    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = 'បុងទិញចូល'

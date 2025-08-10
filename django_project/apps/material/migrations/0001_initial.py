@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
                 ('comment', models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
-                'verbose_name': 'ថែមថយស្តុក',
-                'verbose_name_plural': 'ថែមថយស្តុក',
+                'verbose_name': 'ថែមថយស្តុកគ្រឿង',
+                'verbose_name_plural': 'ថែមថយស្តុកគ្រឿង',
             },
         ),
         migrations.CreateModel(
@@ -63,6 +63,11 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=255, unique=True)),
+                ('contact', models.CharField(max_length=255, null=True, blank=True)),
             ],
+            options={
+                'verbose_name': 'អ្នកផ្គត់ផ្គង់',
+                'verbose_name_plural': 'អ្នកផ្គត់ផ្គង់',
+            },
         ),
     ]

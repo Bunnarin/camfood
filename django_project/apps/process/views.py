@@ -11,11 +11,11 @@ class FormulaListView(BaseListView):
     table_fields = ['product', 'expected_quantity']
     pretty_json_field = 'materials'
     object_actions = [
-        ('edit', 'process:change_formula', None), 
-        ('delete', 'process:delete_formula', None),
+        ('✏️', 'process:change_formula', None), 
+        ('❌', 'process:delete_formula', None),
         ('view', 'process:detail_formula', 'process.view_formula')
         ]
-    actions = [('create', 'process:add_formula', None)]
+    actions = [('+', 'process:add_formula', None)]
 
 class FormulaDetailView(BaseListView):
     model = Formula
@@ -63,8 +63,8 @@ class FormulaDeleteView(BaseDeleteView):
 class ManufacturingLogListView(BaseListView):
     model = ManufacturingLog
     table_fields = ['created_on', 'formula', 'final_quantity', 'comment']
-    object_actions = [('delete', 'process:delete_manufacturinglog', None)]
-    actions = [('create', 'process:add_manufacturinglog', None)]
+    object_actions = [('❌', 'process:delete_manufacturinglog', None)]
+    actions = [('+', 'process:add_manufacturinglog', None)]
 
 class ManufacturingLogCreateView(BaseCreateView):
     model = ManufacturingLog

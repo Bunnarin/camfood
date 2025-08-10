@@ -29,7 +29,13 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=255, unique=True)),
+                ('contact', models.CharField(max_length=255, null=True, blank=True)),
+                ('location', models.CharField(max_length=255, null=True, blank=True)),
             ],
+            options={
+                'verbose_name': 'អតិថិជន',
+                'verbose_name_plural': 'អតិថិជន',
+            },
         ),
         migrations.CreateModel(
             name='Order',

@@ -1,19 +1,41 @@
 from types import SimpleNamespace as obj
 from django.forms import formset_factory
 from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
-from .models import Purchase, Material, Adjustment
-from .forms import PurchaseForm, PurchaseInlineForm
+from .models import Purchase, Material, Adjustment, Supplier
+from .forms import PurchaseInlineForm
+
+class SupplierListView(BaseListView):
+    model = Supplier
+    table_fields = ['name', 'contact']
+    object_actions = [
+        ('✏️', 'material:change_supplier', None),
+        ('❌', 'material:delete_supplier', None),
+    ]
+    actions = [
+        ('+', 'material:add_supplier', None),
+    ]
+
+class SupplierCreateView(BaseCreateView):
+    model = Supplier
+    fields = '__all__'
+
+class SupplierUpdateView(BaseUpdateView):
+    model = Supplier
+    fields = '__all__'
+
+class SupplierDeleteView(BaseDeleteView):
+    model = Supplier
 
 class PurchaseListView(BaseListView):
     model = Purchase
     table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'price', 'supplier', 'content', 'comment']
     object_actions = [
-        ('edit', 'material:change_purchase', None),
-        ('delete', 'material:delete_purchase', None),
+        ('✏️', 'material:change_purchase', None),
+        ('❌', 'material:delete_purchase', None),
         ('view', 'material:detail_purchase', 'material.view_purchase'),
     ]
     actions = [
-        ('create', 'material:add_purchase', None),
+        ('+', 'material:add_purchase', None),
     ]
 
 class PurchaseDetailView(BaseListView):
@@ -36,7 +58,7 @@ class PurchaseDetailView(BaseListView):
 
 class PurchaseCreateView(BaseCreateView):
     model = Purchase
-    form_class = PurchaseForm
+    fields = '__all__'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -64,11 +86,11 @@ class MaterialListView(BaseListView):
     model = Material
     table_fields = ['name', 'stock', 'pending_stock', 'price', 'unit']
     object_actions = [
-        ('edit', 'material:change_material', None),
-        ('delete', 'material:delete_material', None),
+        ('✏️', 'material:change_material', None),
+        ('❌', 'material:delete_material', None),
     ]
     actions = [
-        ('create', 'material:add_material', None),
+        ('+', 'material:add_material', None),
         ('import', 'material:import_material', 'material:add_material'),
     ]
 
@@ -90,10 +112,10 @@ class AdjustmentListView(BaseListView):
     model = Adjustment
     table_fields = ['created_by', 'created_on', 'quantity', 'comment', 'product']
     object_actions = [
-        ('delete', 'material:delete_adjustment', None),
+        ('❌', 'material:delete_adjustment', None),
     ]
     actions = [
-        ('create', 'material:add_adjustment', None),
+        ('+', 'material:add_adjustment', None),
     ]
 
 

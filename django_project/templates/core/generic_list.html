@@ -70,7 +70,7 @@
                         <a href="{% url url obj.pk %}" class="btn btn-primary">{{ action }}</a>
                     {% endfor %}
                     {% if obj.get_absolute_url %}
-                        <a href="{% url obj.get_absolute_url obj.pk %}" class="btn btn-secondary">ℹ️</a>
+                        <a href="{{ obj.get_absolute_url }}" class="btn btn-secondary">ℹ️</a>
                     {% endif %}
                     </td>
                 {% endif %}

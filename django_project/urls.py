@@ -4,6 +4,7 @@ from .views import home_view
 
 urlpatterns = [
     path('', home_view, name='home'),
+    path('', include('pwa.urls')),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('product/', include('apps.product.urls')),

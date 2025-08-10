@@ -53,11 +53,21 @@ class Adjustment(models.Model):
 
 class Buyer(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    contact = models.CharField(max_length=255, null=True, blank=True)
+    location = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'អតិថិជន'
+        verbose_name_plural = verbose_name
 
     def __str__(self):
         return self.name
+    
+    def get_absolute_url(self):
+        return reverse('product:change_buyer', kwargs={'pk': self.pk})
 
 class Order(models.Model):
+    buyer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
     created_by = models.ForeignKey('user.User', on_delete=models.PROTECT, editable=False)
     created_on = models.DateField(auto_now_add=True, editable=False)
     paid = models.BooleanField(default=False)
@@ -68,7 +78,6 @@ class Order(models.Model):
     content = models.JSONField(editable=False)
     comment = models.CharField(max_length=255, null=True, blank=True)
     price = models.IntegerField(default=0, editable=False)
-    buyer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
 
     class Meta:
         verbose_name = 'បុងលក់ចេញ'

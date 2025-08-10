@@ -1,20 +1,42 @@
 from types import SimpleNamespace as obj
 from django.forms import formset_factory
 from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
-from .models import Order, Product, Adjustment
-from .forms import OrderForm, OrderInlineForm
+from .models import Order, Product, Adjustment, Buyer
+from .forms import OrderInlineForm
+
+class BuyerListView(BaseListView):
+    model = Buyer
+    table_fields = ['name', 'contact', 'location']
+    object_actions = [
+        ('✏️', 'product:change_buyer', None),
+        ('❌', 'product:delete_buyer', None),
+    ]
+    actions = [
+        ('+', 'product:add_buyer', None),
+    ]
+
+class BuyerCreateView(BaseCreateView):
+    model = Buyer
+    fields = '__all__'
+
+class BuyerUpdateView(BaseUpdateView):
+    model = Buyer
+    fields = ['name', 'contact', 'location']
+
+class BuyerDeleteView(BaseDeleteView):
+    model = Buyer
 
 class OrderListView(BaseListView):
     model = Order
     table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'price', 'buyer', 'comment']
     pretty_json_field = 'content'
     object_actions = [
-        ('print', 'product:detail_order', 'product.view_order'),
-        ('edit', 'product:change_order', None),
-        ('delete', 'product:delete_order', None),
+        ('🖨️', 'product:detail_order', 'product.view_order'),
+        ('✏️', 'product:change_order', None),
+        ('❌', 'product:delete_order', None),
     ]
     actions = [
-        ('create', 'product:add_order', None),
+        ('+', 'product:add_order', None),
     ]
 
 class OrderDetailView(BaseListView):
@@ -38,7 +60,7 @@ class OrderDetailView(BaseListView):
 
 class OrderCreateView(BaseCreateView):
     model = Order
-    form_class = OrderForm
+    fields = '__all__'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -68,11 +90,11 @@ class ProductListView(BaseListView):
     model = Product
     table_fields = ['name', 'code', 'stock', 'pending_stock', 'price', 'unit']
     object_actions = [
-        ('edit', 'product:change_product', None),
-        ('delete', 'product:delete_product', None),
+        ('✏️', 'product:change_product', None),
+        ('❌', 'product:delete_product', None),
     ]
     actions = [
-        ('create', 'product:add_product', None),
+        ('+', 'product:add_product', None),
         ('import', 'product:import_product', 'product.add_product'),
     ]
 
@@ -89,16 +111,16 @@ class ProductDeleteView(BaseDeleteView):
 
 class ProductImportView(BaseImportView):
     model = Product
-    fields = ['name', 'code', 'price', 'unit']
+    fields = ['name', 'code', 'stock', 'price', 'unit']
 
 class AdjustmentListView(BaseListView):
     model = Adjustment
     table_fields = ['created_by', 'created_on', 'quantity', 'comment', 'product']
     object_actions = [
-        ('delete', 'product:delete_adjustment', None),
+        ('❌', 'product:delete_adjustment', None),
     ]
     actions = [
-        ('create', 'product:add_adjustment', None),
+        ('+', 'product:add_adjustment', None),
     ]
 
 

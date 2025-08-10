@@ -23,8 +23,8 @@ class MoneyView(BaseListView):
 class TransactionListView(BaseListView):
     model = Transaction
     table_fields = ['created_on', 'created_by', 'amount', 'comment']
-    actions = [('create', 'core:add_transaction', None)]
-    object_actions = [('delete', 'core:delete_transaction', None)]
+    actions = [('+', 'core:add_transaction', None)]
+    object_actions = [('❌', 'core:delete_transaction', None)]
 
 class TransactionCreateView(BaseCreateView):
     model = Transaction

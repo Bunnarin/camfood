@@ -1,26 +1,7 @@
 from django import forms
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .models import Order, Product, Buyer
-
-class OrderForm(forms.ModelForm):
-    new_buyer = forms.CharField(required=False)
-
-    class Meta:
-        model = Order
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['buyer'].required = False
-    
-    def clean(self):
-        data = super().clean()
-        if not data.get('buyer') and not data.get('new_buyer'):
-            self.add_error('buyer', 'either select the buyer or fill the new_buyer')
-        if not data.get('buyer'):
-            data['buyer'], _ = Buyer.objects.get_or_create(name=data['new_buyer'])
-        return data
+from .models import Product
 
 class OrderInlineForm(forms.Form):
     """
