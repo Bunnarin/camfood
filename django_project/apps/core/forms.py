@@ -2,6 +2,9 @@ from django import forms
 from django.forms.models import modelform_factory
 
 def get_default_form(flat_fields, model):
+    """
+    This exists because the easier option (modelform_factory attach its field validation to the text area and I don't want that)
+    """
     class DefaultImportForm(forms.Form):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)

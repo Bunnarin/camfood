@@ -41,6 +41,8 @@ MIDDLEWARE = [
     # 3rd party
     "allauth.account.middleware.AccountMiddleware",
     'auditlog.middleware.AuditlogMiddleware',
+    # mine
+    'apps.core.middleware.GlobalExceptionHandlingMiddleware',
 ]
 
 ROOT_URLCONF = 'django_project.urls'
