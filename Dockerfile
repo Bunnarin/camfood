@@ -5,6 +5,7 @@ RUN chmod +x backup.sh
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt gunicorn
 RUN apk add postgresql-dev
+RUN apk add --no-cache postgresql-client
 
 CMD python manage.py createcachetable && \
     python manage.py migrate --noinput && \
