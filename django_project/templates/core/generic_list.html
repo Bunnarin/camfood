@@ -108,6 +108,9 @@
                     .every(function() {
                         var column = this;
                         var header = $(column.header()); // Get the header element
+                        // create this hidden header so that when we export the excel knows the what it is
+                        var title = $('<p hidden>' + header.text().trim() + '</p>')
+                            .appendTo(header.empty());
                         // Create input element
                         var input = $('<input placeholder="' + header.text().trim() + '" style="field-sizing: content;"/>')
                             .appendTo(header.empty()) // Empty existing header text and append input
@@ -128,108 +131,6 @@
         // Get the main table data
         const table = document.getElementById('data-table');
         const wb = XLSX.utils.table_to_book(table, {sheet: 'Main Data', raw: true});
-        
-        // First pass: Collect all rows and identify JSON schemas
-        const allRows = [];
-        const schemaMap = new Map(); // Maps schema key to {headers, rowIndices, schemaId}
-        let schemaCounter = 1;
-        
-        const headers = Array.from(table.rows[0].cells).map(cell => cell.textContent.trim());
-        const rows = Array.from(table.querySelectorAll('tr')).slice(1);
-        
-        rows.forEach((row, rowIndex) => {
-            const cells = row.querySelectorAll('td');
-            const rowData = {};
-            const rowJsonData = {};
-            let hasJson = false;
-            let schemaKey = '';
-            
-            // First collect all regular cell data
-            cells.forEach((cell, colIndex) => {
-                if (colIndex < headers.length) {
-                    const text = cell.textContent.trim();
-                    rowData[headers[colIndex]] = text;
-                    
-                    // Check if cell contains JSON
-                    if (text.startsWith('{') && text.endsWith('}')) {
-                        try {
-                            const jsonData = JSON.parse(text.replace(/'/g, '"'));
-                            hasJson = true;
-                            
-                            // Create schema key from sorted JSON keys
-                            const jsonKeys = Object.keys(jsonData).sort();
-                            schemaKey = jsonKeys.join('|');
-                            
-                            // Store JSON data for this row
-                            rowJsonData[headers[colIndex]] = jsonData;
-                            
-                            // Track all unique fields for this schema
-                            if (!schemaMap.has(schemaKey)) {
-                                schemaMap.set(schemaKey, {
-                                    headers: new Set([...headers, ...jsonKeys]),
-                                    rows: [],
-                                    id: schemaCounter++  // Assign sequential ID
-                                });
-                            }
-                            
-                            // Add this row's JSON fields to the schema headers
-                            jsonKeys.forEach(key => schemaMap.get(schemaKey).headers.add(key));
-                            
-                        } catch (e) {
-                            console.log('Error parsing JSON:', e);
-                        }
-                    }
-                }
-            });
-            
-            // Store the row data and its schema information
-            allRows.push({
-                data: rowData,
-                jsonData: rowJsonData,
-                schemaKey: hasJson ? schemaKey : null
-            });
-            
-            // Add row index to appropriate schema group
-            if (hasJson && schemaKey) {
-                schemaMap.get(schemaKey).rows.push(rowIndex);
-            }
-        });
-        
-        // Create a worksheet for each schema
-        schemaMap.forEach((schemaData, schemaKey) => {
-            const sheetName = `Schema ${schemaData.id}`;
-            const allHeaders = Array.from(schemaData.headers);
-            const sheetRows = [];
-            
-            // Process each row that matches this schema
-            schemaData.rows.forEach(rowIndex => {
-                const row = allRows[rowIndex];
-                const sheetRow = {};
-                
-                // Add all regular fields
-                Object.entries(row.data).forEach(([key, value]) => {
-                    sheetRow[key] = value;
-                });
-                
-                // Add JSON fields, overriding regular fields if needed
-                Object.values(row.jsonData).forEach(jsonData => {
-                    Object.entries(jsonData).forEach(([key, value]) => {
-                        sheetRow[key] = typeof value === 'object' ? JSON.stringify(value) : value;
-                    });
-                });
-                
-                sheetRows.push(sheetRow);
-            });
-            
-            // Create worksheet with all headers
-            const ws = XLSX.utils.json_to_sheet(sheetRows, {
-                header: allHeaders
-            });
-            
-            // Add worksheet to workbook
-            XLSX.utils.book_append_sheet(wb, ws, sheetName);
-        });
-        
         // Save the workbook
         XLSX.writeFile(wb, 'export.xlsx');
     }

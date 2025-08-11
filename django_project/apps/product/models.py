@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.urls import reverse
 from apps.core.models import add_pending_money, fulfill_money
 
 class Product(models.Model):
