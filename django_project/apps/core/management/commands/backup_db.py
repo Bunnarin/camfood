@@ -10,16 +10,12 @@ class Command(BaseCommand):
         script_path = settings.BASE_DIR / 'backup.sh'
 
         try:
-            # Use subprocess.run to execute the shell script
-            # capture_output=True captures stdout and stderr
-            # text=True decodes stdout/stderr as text
-            # check=True raises CalledProcessError if the command returns a non-zero exit code
             result = subprocess.run(
-                [script_path],  # Or just [script_path] if the script is executable
+                [script_path],
                 capture_output=True,
                 text=True,
                 check=True,
-                shell=False  # Set to True if you need shell features like wildcards, pipes, etc.
+                shell=False
             )
             self.stdout.write(self.style.SUCCESS(f'Script executed successfully: {script_path}'))
             if result.stdout:
