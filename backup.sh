@@ -12,8 +12,8 @@ fi
 export DB_NAME=${DB_NAME}
 export DB_USER=${DB_USER}
 export DB_PASSWORD=${DB_PASSWORD}
-export DB_HOST=${DB_HOST}
-export DB_PORT=${DB_PORT}
+export DB_HOST=postgresql
+export DB_PORT=5432
 export BACKUP_DIR=backup
 export RETENTION_DAYS=1
 
