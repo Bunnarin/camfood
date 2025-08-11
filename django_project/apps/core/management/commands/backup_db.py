@@ -12,7 +12,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Get the project root directory (where manage.py is located)
-        backup_script = settings.BASE_DIR / 'backup.sh'
+        backup_script = 'backup.sh'
         
         if not backup_script.exists():
             self.stderr.write(self.style.ERROR(f'Backup script not found at {backup_script}'))
