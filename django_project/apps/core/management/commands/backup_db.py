@@ -1,83 +1,38 @@
-import os
+# myapp/management/commands/run_shell_script.py
 import subprocess
-import shutil
-from pathlib import Path
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-import logging
-
-logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Run the database backup script'
+    help = 'Runs a specified shell script.'
 
     def handle(self, *args, **options):
-        # Try multiple possible locations for the backup script
-        possible_locations = [
-            Path(settings.BASE_DIR).parent / 'backup.sh',  # For Docker (in /app/backup.sh)
-            Path(settings.BASE_DIR) / 'backup.sh',         # For local development
-            Path('/app/backup.sh'),                        # Fallback for Docker
-            'backup.sh',                                   # Last resort, will use PATH
-        ]
-        
-        backup_script = None
-        for location in possible_locations:
-            if isinstance(location, str):
-                # If it's a string (like 'backup.sh'), use which to find it in PATH
-                path = shutil.which(location)
-                if path:
-                    backup_script = Path(path)
-                    break
-            elif location.exists():
-                backup_script = location
-                break
-        
-        if not backup_script or not backup_script.exists():
-            error_msg = f'Backup script not found. Tried: {[str(loc) for loc in possible_locations if str(loc) != "backup.sh"]}'
-            self.stderr.write(self.style.ERROR(error_msg))
-            return
-        
-        self.stdout.write(self.style.SUCCESS(f'Using backup script at: {backup_script}'))
-        
+        script_path = settings.BASE_DIR / 'backup.sh'
+
         try:
-            # Make the script executable
-            backup_script.chmod(0o755)
-            
-            # Get the directory containing the script
-            script_dir = backup_script.parent
-            
-            # Run the backup script
-            self.stdout.write(self.style.SUCCESS('Starting database backup...'))
-            
-            # Set up environment with current environment plus PYTHONUNBUFFERED
-            env = os.environ.copy()
-            env['PYTHONUNBUFFERED'] = '1'
-            
-            # Run the script
-            process = subprocess.Popen(
-                [str(backup_script)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+            # Use subprocess.run to execute the shell script
+            # capture_output=True captures stdout and stderr
+            # text=True decodes stdout/stderr as text
+            # check=True raises CalledProcessError if the command returns a non-zero exit code
+            result = subprocess.run(
+                [script_path],  # Or just [script_path] if the script is executable
+                capture_output=True,
                 text=True,
-                cwd=str(script_dir),  # Run from the script's directory
-                env=env,
-                bufsize=1,  # Line buffered
-                universal_newlines=True
+                check=True,
+                shell=False  # Set to True if you need shell features like wildcards, pipes, etc.
             )
-            
-            # Stream the output in real-time
-            for line in process.stdout:
-                self.stdout.write(line.strip())
-            
-            # Wait for the process to complete
-            return_code = process.wait()
-            
-            if return_code == 0:
-                self.stdout.write(self.style.SUCCESS('Backup completed successfully'))
-            else:
-                self.stderr.write(self.style.ERROR(f'Backup failed with return code {return_code}'))
-                
+            self.stdout.write(self.style.SUCCESS(f'Script executed successfully: {script_path}'))
+            if result.stdout:
+                self.stdout.write(f'STDOUT:\n{result.stdout}')
+            if result.stderr:
+                self.stderr.write(f'STDERR:\n{result.stderr}')
+
+        except subprocess.CalledProcessError as e:
+            raise CommandError(f'Error executing script: {script_path}\n'
+                                f'Return Code: {e.returncode}\n'
+                                f'STDOUT: {e.stdout}\n'
+                                f'STDERR: {e.stderr}')
+        except FileNotFoundError:
+            raise CommandError(f'Script not found: {script_path}')
         except Exception as e:
-            logger.exception('Error during backup')
-            self.stderr.write(self.style.ERROR(f'Error during backup: {str(e)}'))
-            raise
+            raise CommandError(f'An unexpected error occurred: {e}')
