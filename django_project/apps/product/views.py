@@ -1,19 +1,16 @@
-from types import SimpleNamespace as obj
-from django.forms import formset_factory
-from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView
-from .models import Order, Product, Adjustment, Buyer
+from apps.core.generic_views import BaseListView, BaseCreateView, BaseUpdateView, BaseDeleteView, BaseImportView, BaseInlineCreateView, BaseDetailView
+from .models import Order, Product, Adjustment, Buyer, OrderItem
 from .forms import OrderInlineForm
 
 class BuyerListView(BaseListView):
     model = Buyer
     table_fields = ['name', 'contact', 'location']
-    object_actions = [
-        ('✏️', 'product:change_buyer', None),
-        ('❌', 'product:delete_buyer', None),
-    ]
-    actions = [
-        ('+', 'product:add_buyer', None),
-    ]
+    object_actions = [('✏️', 'product:change_buyer', None), ('❌', 'product:delete_buyer', None)]
+    actions = [('+', 'product:add_buyer', None)]
+
+class BuyerDetailView(BaseDetailView):
+    model = Buyer
+    fields = ['name', 'contact', 'location']
 
 class BuyerCreateView(BaseCreateView):
     model = Buyer
@@ -28,55 +25,58 @@ class BuyerDeleteView(BaseDeleteView):
 
 class OrderListView(BaseListView):
     model = Order
-    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'price', 'buyer', 'comment']
-    pretty_json_field = 'content'
+    table_fields = ['created_by', 'created_on', 'paid', 'paid_on', 'done', 'done_on', 'total_price', 'buyer', 'comment', 'items']
     object_actions = [
-        ('🖨️', 'product:detail_order', 'product.view_order'),
-        ('✏️', 'product:change_order', None),
-        ('❌', 'product:delete_order', None),
+        ('🖨️', 'product:print_order', 'product.view_order'), 
+        ('ℹ️', 'product:detail_order', 'product.view_order'),
+        ('✏️', 'product:change_order', None), 
+        ('❌', 'product:delete_order', None)
     ]
-    actions = [
-        ('+', 'product:add_order', None),
-    ]
+    actions = [('+', 'product:add_order', None)]
 
 class OrderDetailView(BaseListView):
-    model = Order
+    model = OrderItem
+    table_fields = ['product', 'quantity', 'subtotal', 'mfg']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(order_id=self.kwargs['pk'])
+
+class OrderPrintView(BaseListView):
+    model = OrderItem
     template_name = 'product/invoice.html'
+    table_fields = ['product.name', 'quantity', 'subtotal']
+
+    def get_queryset(self):
+        return super().get_queryset().filter(order_id=self.kwargs['pk'])
 
     def get_context_data(self, **kwargs):
         order = Order.objects.get(pk=self.kwargs['pk'])
-        context = {
-            'object_dict': {
-                'id': order.id,
-                'created_by': order.created_by,
-                'created_on': order.created_on,
-                'price': order.price,
-                'buyer': order.buyer,
-            },
-            'object_list': [obj(code=code, quantity=quantity, price="៛ "+str(price)) for code, (quantity, _, price) in order.content.items()],
-            'table_fields': ['code', 'quantity', 'price']
-        }
-        return context
-
-class OrderCreateView(BaseCreateView):
-    model = Order
-    fields = '__all__'
-
-    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['formset'] = formset_factory(OrderInlineForm)(self.request.POST or None)
+        context.update({
+            'id': order.id,
+            'created_by': order.created_by,
+            'created_on': order.created_on,
+            'total_price': order.total_price,
+            'buyer': order.buyer,
+        })
         return context
-    
+
+class OrderCreateView(BaseInlineCreateView):
+    model = Order
+    inline_model = OrderItem
+    fields = '__all__'
+    inline_form_class = OrderInlineForm
+
     def form_valid(self, form):
-        formset = formset_factory(OrderInlineForm)(self.request.POST)
+        formset = self.get_context_data()['formset']
+        # aggreagate price from the formset
         if not formset.is_valid():
-            return super().form_invalid(form)
-        content = {}
-        for item in formset.cleaned_data:
-            # convert cleaned_data into into the model json
-            content[item['product'].code] = (item['quantity'], str(item['mfg'] or ""), item['price'])
-        form.instance.content = content
-        form.instance.price = sum(item['price'] * item['quantity'] for item in formset.cleaned_data)
+            return self.form_invalid(form)
+        # filter out empty form
+        for itemform in formset:
+            if not itemform.cleaned_data.get('subtotal'):
+                break
+            form.instance.total_price += itemform.cleaned_data['subtotal']
         return super().form_valid(form)
 
 class OrderUpdateView(BaseUpdateView):
@@ -116,12 +116,8 @@ class ProductImportView(BaseImportView):
 class AdjustmentListView(BaseListView):
     model = Adjustment
     table_fields = ['created_by', 'created_on', 'quantity', 'comment', 'product']
-    object_actions = [
-        ('❌', 'product:delete_adjustment', None),
-    ]
-    actions = [
-        ('+', 'product:add_adjustment', None),
-    ]
+    object_actions = [('❌', 'product:delete_adjustment', None)]
+    actions = [('+', 'product:add_adjustment', None)]
 
 
 class AdjustmentCreateView(BaseCreateView):

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_crontab',
     'pwa',
+    'extra_views',
     # mine
     'apps.core',
     'apps.user',

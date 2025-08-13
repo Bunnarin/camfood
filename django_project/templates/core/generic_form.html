@@ -65,10 +65,7 @@
 <script>
     // to be called when new form get created so that they can have the select functionality as well
     function initializeSelect2() {
-        $('select').not('.select2-hidden-accessible').select2({
-            theme: 'bootstrap-5',
-            width: '100%'
-        });
+        $('select').not('.select2-hidden-accessible').select2();
     }
 
     $(document).ready(function() {

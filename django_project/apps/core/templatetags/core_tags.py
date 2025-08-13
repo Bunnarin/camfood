@@ -26,38 +26,19 @@ def get_attr_from_object(value, arg):
     # transform true false to yes no
     if isinstance(val, bool):
         return "Yes" if val else "No"
-        
+    # handle related managers (reverse many-to-one relationships)
+    if hasattr(val, 'all'):
+        return ", ".join(str(item) for item in val.all())
     return val
 
 @register.filter
-def pretty_json(value):
+def replace(value, arg):
     """
-    Format a JSON string or Python object as a simple string.
-    Usage in template: {{ your_json|pretty_json }}
-    Example: {'name': 'John', 'age': 30} becomes "name: John, age: 30"
+    Usage: {{ value|replace:"old_string,new_string" }}
     """
-    if not value:
-        return ""
-    
-    try:
-        # If value is already a string, try to load it as JSON
-        if isinstance(value, str):
-            json_obj = json.loads(value)
-        else:
-            # If it's already a Python object, use it directly
-            json_obj = value
-            
-        # Convert dictionary to string in format "key: val, key: val"
-        if isinstance(json_obj, dict):
-            formatted_str = ",".join(f"{k}: {v}" for k, v in json_obj.items())
-            return formatted_str
-        # Handle lists/arrays
-        elif isinstance(json_obj, (list, tuple)):
-            return ",".join(str(item) for item in json_obj)
-        # Handle other JSON-serializable types
-        else:
-            return str(json_obj)
-            
-    except (TypeError, ValueError) as e:
-        # If it's not valid JSON, return the string representation
-        return str(value)
+    if isinstance(value, str) and isinstance(arg, str):
+        parts = arg.split(',', 1)  # Split only on the first comma
+        if len(parts) == 2:
+            old_string, new_string = parts[0], parts[1]
+            return value.replace(old_string, new_string)
+    return value

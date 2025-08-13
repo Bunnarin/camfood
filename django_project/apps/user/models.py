@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
 
+    def __str__(self):
+        return self.first_name + ' ' + self.last_name
+
     def clean(self):
         """
         First, make sure that if it's a new user, we set an unusable password

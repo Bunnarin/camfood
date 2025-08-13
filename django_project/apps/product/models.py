@@ -6,7 +6,7 @@ from apps.core.models import add_pending_money, fulfill_money
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
     code = models.CharField(max_length=4, unique=True)
-    price = models.IntegerField(help_text="៛")
+    price = models.IntegerField(help_text="riel")
     unit = models.CharField(max_length=255)
     stock = models.IntegerField(default=0)
     pending_stock = models.IntegerField(default=0, editable=False)
@@ -16,7 +16,7 @@ class Product(models.Model):
         verbose_name_plural = verbose_name
 
     def __str__(self):
-        return f"{self.name} (${self.price}/{self.unit}) ({self.code})"
+        return f"{self.code} {self.name} ({self.price}៛/{self.unit})"
     
     def add_stock(self, amount):
         self.stock += amount
@@ -39,7 +39,7 @@ class Adjustment(models.Model):
     comment = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        verbose_name = 'ថែមថយផលិតផល'
+        verbose_name = 'ថែមថយស្តុកផលិតផល'
         verbose_name_plural = verbose_name
     
     def save(self, *args, **kwargs):
@@ -65,7 +65,7 @@ class Buyer(models.Model):
         return self.name
     
     def get_absolute_url(self):
-        return reverse('product:change_buyer', kwargs={'pk': self.pk})
+        return reverse('product:detail_buyer', kwargs={'pk': self.pk})
 
 class Order(models.Model):
     buyer = models.ForeignKey(Buyer, on_delete=models.PROTECT)
@@ -75,55 +75,63 @@ class Order(models.Model):
     paid_on = models.DateField(null=True, blank=True, editable=False)
     done = models.BooleanField(default=False)
     done_on = models.DateField(null=True, blank=True, editable=False)
-
-    content = models.JSONField(editable=False)
     comment = models.CharField(max_length=255, null=True, blank=True)
-    price = models.IntegerField(default=0, editable=False)
+    total_price = models.IntegerField(default=0, editable=False)
 
     class Meta:
         verbose_name = 'បុងលក់ចេញ'
         verbose_name_plural = verbose_name
 
-    def save(self, *args, **kwargs):            
+    def save(self, *args, **kwargs): 
         if not self.pk:
-            for product_code, (quantity, _, final_price) in self.content.items():
-                product = Product.objects.get(code=product_code)
-                product.add_pending_stock(quantity)
-                self.price += final_price
-            add_pending_money(self.price)
-            
-        if self.paid and not self.paid_on:
-            self.paid_on = timezone.now().date()
-            fulfill_money(self.price)
-        elif not self.paid and self.paid_on:
-            raise ValueError("cannot change from paid to unpaid")
-
+            add_pending_money(self.total_price)
+                   
         if self.done and not self.done_on:
             self.done_on = timezone.now().date()
-            for product_code, (quantity, _, _) in self.content.items():
-                product = Product.objects.filter(code=product_code).first()
-                if not product:
-                    continue
-                product.fulfill_stock(quantity)
+            for item in self.items.all():
+                item.fulfill_stock()
         elif not self.done and self.done_on:
             raise ValueError("cannot change from done to undone")
-                
+        
+        if self.paid and not self.paid_on:
+            self.paid_on = timezone.now().date()
+            fulfill_money(self.total_price)
+        elif not self.paid and self.paid_on:
+            raise ValueError("cannot change from paid to unpaid")
         super().save(*args, **kwargs)
     
     def delete(self, *args, **kwargs):
-        """
-        cancelling the order
-        """
-        if not self.done: # remove the staging diff stock
-            for product_code, (quantity, _, _) in self.content.items():
-                product = Product.objects.filter(code=product_code).first()
-                if not product:
-                    continue
-                product.add_pending_stock(-quantity)
-
-        if not self.paid: # rm the pending money
-            add_pending_money(-self.price)
-
+        if not self.paid: #rm the pending profit
+            add_pending_money(-self.total_price)
+        if not self.done: #rm the pending stock
+            for item in self.items.all():
+                item.product.add_pending_stock(-item.quantity)
         super().delete(*args, **kwargs)
+
+class OrderItem(models.Model):
+    """
+    inline model
+    """
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.IntegerField()
+    mfg = models.DateField(null=True, blank=True)
+    subtotal = models.IntegerField(blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+
+    def __str__(self):
+        return f"{self.product.code}: {self.quantity}"
+
+    def save(self, *args, **kwargs):
+        creation = not self.pk
+        if creation: # add to the pending stock
+            self.product.add_pending_stock(self.quantity)
+        super().save(*args, **kwargs)
+    
+    def fulfill_stock(self):
+        """
+        to be called by its order
+        """
+        self.product.fulfill_stock(self.quantity)
+
     
     

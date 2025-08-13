@@ -4,15 +4,32 @@ from apps.material.models import Material
 
 class Formula(models.Model):
     product = models.OneToOneField(Product, on_delete=models.PROTECT)
-    materials = models.JSONField(editable=False)
     expected_quantity = models.IntegerField()
 
     class Meta:
         verbose_name = 'រូបមន្ត'
         verbose_name_plural = verbose_name
+        unique_together = ('product', 'expected_quantity')
 
     def __str__(self):
         return f"{self.product.name} ({self.product.code} ចេញ{self.expected_quantity}{self.product.unit})"
+
+class FormulaItem(models.Model):
+    """
+    Inline model for formula
+    """
+    formula = models.ForeignKey(Formula, on_delete=models.CASCADE, related_name='items')
+    material = models.ForeignKey(Material, on_delete=models.PROTECT)
+    quantity = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.material.code}: {self.quantity}"
+
+    def consume_stock(self):
+        self.material.add_stock(-self.quantity)
+    
+    def undo_stock(self):
+        self.material.add_stock(self.quantity)
 
 class ManufacturingLog(models.Model):
     created_on = models.DateField(auto_now_add=True)
@@ -25,26 +42,17 @@ class ManufacturingLog(models.Model):
         verbose_name_plural = verbose_name
 
     def save(self, *args, **kwargs):
-        if not self.pk: # make changes only during creation
-            # remove the material
-            for material_name, quantity in self.formula.materials.items():
-                Material.objects.get(name=material_name).add_stock(-quantity)
-
-            # increase the product
+        creation = not self.pk
+        if creation:  # consume the material
+            for item in self.formula.items.all():
+                item.consume_stock()
+            # produce the product
             self.formula.product.add_stock(self.final_quantity)
-
         super().save(*args, **kwargs)
     
     def delete(self, *args, revert=True, **kwargs):
-        if not revert:
-            return super().delete(*args, **kwargs)
-
-        self.formula.product.add_stock(-self.final_quantity)
-
-        for material_name, quantity in self.formula.materials.items():
-            material = Material.objects.filter(name=material_name).first()
-            if not material:
-                continue
-            material.add_stock(quantity)
-
+        if revert:
+            self.formula.product.add_stock(-self.final_quantity)
+            for item in self.formula.items.all():
+                item.undo_stock()
         super().delete(*args, **kwargs)

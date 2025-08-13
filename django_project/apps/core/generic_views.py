@@ -1,12 +1,35 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
-from django import forms
-from django.forms import formset_factory
+from django.forms import formset_factory, inlineformset_factory
 from django.shortcuts import render
 from django.forms.models import modelform_factory
 from django.shortcuts import redirect
 from .forms import get_default_form
+
+class BaseDetailView(PermissionRequiredMixin, DetailView):
+    """
+    Base view for displaying a single object.
+    """
+    template_name = 'core/generic_list.html'
+    fields = []
+
+    def get_permission_required(self):
+        """
+        can view if has any one of the read, change, delete permission
+        """
+        user = self.request.user
+        self.app_label = self.model._meta.app_label
+        self.model_name = self.model._meta.model_name
+        for action in ["view", "change", "delete"]:
+            if user.has_perm(f'{self.app_label}.{action}_{self.model_name}'):
+                return [f'{self.app_label}.{action}_{self.model_name}']
+        return [f'{self.app_label}.view_{self.model_name}']
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fields'] = self.fields
+        return context
 
 class BaseListView(PermissionRequiredMixin, ListView):
     """
@@ -16,7 +39,6 @@ class BaseListView(PermissionRequiredMixin, ListView):
     actions = []
     template_name = 'core/generic_list.html'
     table_fields = []
-    pretty_json_field = None
 
     def get_permission_required(self):
         """
@@ -52,8 +74,6 @@ class BaseListView(PermissionRequiredMixin, ListView):
                 context["actions"][action] = url
 
         context['table_fields'] = self.table_fields
-        if self.pretty_json_field:
-            context['pretty_json_field'] = self.pretty_json_field
         return context
 
     def get_queryset(self):
@@ -185,3 +205,36 @@ class BaseImportView(BaseCreateView):
             else:
                 return render(request, self.template_name, {'formset': formset})
         return redirect(f'{self.app_label}:view_{self.model_name}')
+
+class BaseInlineCreateView(BaseCreateView):
+    """
+    this is like extra_view's but for createview cuz that sht doesnt handle creation at all
+    """
+    model = None
+    fields = '__all__'
+    form_class = None
+    inline_model = None
+    inline_form_class = None
+    inline_fields = '__all__'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.inline_form_class:
+            context['formset'] = inlineformset_factory(self.model, self.inline_model, form=self.inline_form_class, fields=self.inline_fields)(self.request.POST or None)
+        else:
+            context['formset'] = inlineformset_factory(self.model, self.inline_model, fields=self.inline_fields)(self.request.POST or None)
+        return context    
+    
+    # after the part where we create the main model, we create the inline models
+    def form_valid(self, form):
+        context = self.get_context_data()
+        formset = context['formset']
+        if formset.is_valid():
+            form.instance.created_by = self.request.user
+            self.object = form.save()
+            instances = formset.save(commit=False)
+            for instance in instances:
+                setattr(instance, self.model.__name__.lower(), self.object)
+                instance.save()
+            return super().form_valid(form)
+        return self.form_invalid(form)
