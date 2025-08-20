@@ -1,0 +1,1 @@
+set up github secret and var
